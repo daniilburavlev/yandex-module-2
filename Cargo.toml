@@ -4,3 +4,5 @@ members = ["quotes", "server"]
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
+rand = "0"
+crossbeam = "0"

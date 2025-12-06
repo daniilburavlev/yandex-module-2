@@ -3,7 +3,7 @@ use std::io::{BufReader, Read};
 use std::mem;
 
 const PRICE_SIZE: usize = 8;
-const VOLUME_SIZE: usize = 4;
+const VOLUME_SIZE: usize = 8;
 const TIMESTAMP_SIZE: usize = 8;
 
 const INVALID_FORMAT_MSG: &str = "Неверный формат файла!";
@@ -52,7 +52,7 @@ impl TryFrom<Vec<u8>> for StockQuote {
 
         let len = read_num!(reader, u32);
         let price = read_num!(reader, u64);
-        let volume = read_num!(reader, u32);
+        let volume = read_num!(reader, u64);
         let timestamp = read_num!(reader, u64);
         let ticker_len = get_ticker_len(len as usize);
 

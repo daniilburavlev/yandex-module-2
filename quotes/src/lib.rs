@@ -16,14 +16,14 @@ pub struct StockQuote {
     /// Current price
     pub price: u64,
     /// Volume of stocks traded
-    pub volume: u32,
+    pub volume: u64,
     /// Timestamp, then stock change was published
     pub timestamp: u64,
 }
 
 impl StockQuote {
     /// Creates new `StockQuote` instance with current timestamp
-    pub fn new(ticker: &str, price: u64, volume: u32) -> Self {
+    pub fn new(ticker: &str, price: u64, volume: u64) -> Self {
         Self {
             ticker: ticker.to_string(),
             price,
@@ -33,5 +33,15 @@ impl StockQuote {
                 .unwrap()
                 .as_millis() as u64,
         }
+    }
+
+    /// Update price, volume and current timestamp
+    pub fn update(&mut self, price: u64, volume: u64) {
+        self.price = price;
+        self.volume = volume;
+        self.timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
     }
 }
