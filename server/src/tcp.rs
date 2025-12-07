@@ -137,10 +137,14 @@ mod tests {
     fn test_run_receive_command() {
         let port: i32 = rand::rng().random_range(8000..9000);
         let address = format!("127.0.0.1:{}", port);
-        let rx = tcp::run(&address).unwrap();
-        let udp_address = "udp://127.0.0.1:8080".to_string();
+
+        let rx = run(&address).unwrap();
+
         let tickers = vec!["AAPL".to_string()];
-        let command = Command::Sub { address: udp_address.clone(), tickers };
+        let command = Command::Sub {
+            address: "udp://127.0.0.1:8080".to_string(),
+            tickers,
+        };
 
         let mut stream = TcpStream::connect(&address).unwrap();
         let _ = stream.write_all(command.to_string().as_bytes());

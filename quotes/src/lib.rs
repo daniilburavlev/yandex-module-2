@@ -2,10 +2,8 @@
 #![warn(missing_docs)]
 //! The `quotes` create
 
-mod error;
 mod serialization;
 
-pub use error::Error;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Main data of the stock

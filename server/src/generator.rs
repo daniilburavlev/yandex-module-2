@@ -2,7 +2,7 @@ use crossbeam::channel::{unbounded, Receiver};
 use quotes::StockQuote;
 use rand::rngs::ThreadRng;
 use rand::{rng, Rng};
-use std::thread;
+use std::{io, thread};
 
 /// Maximum growth of 0.02% to emulate growth
 const MAX_CHANGE: u64 = 10002;
@@ -11,7 +11,7 @@ const MIN_CHANGE: u64 = 9999;
 /// 100%
 const DIVIDER: u64 = 10000;
 
-pub(crate) fn run(stocks: Vec<String>) -> Result<Receiver<Option<StockQuote>>, quotes::Error> {
+pub(crate) fn run(stocks: Vec<String>) -> io::Result<Receiver<Option<StockQuote>>> {
     let (s, r) = unbounded();
     thread::spawn(move || {
         let mut generator = QuoteGenerator::new(stocks);

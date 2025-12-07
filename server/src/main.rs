@@ -1,7 +1,8 @@
 extern crate core;
 
-mod tcp;
 mod generator;
+mod tcp;
+mod udp;
 
 fn main() {
 }
