@@ -7,3 +7,4 @@ edition = "2024"
 quotes = { path = "../quotes" }
 rand = { workspace = true }
 crossbeam = { workspace = true }
+clap = { workspace = true }

@@ -6,3 +6,4 @@ members = ["quotes", "server"]
 serde = { version = "1", features = ["derive"] }
 rand = "0"
 crossbeam = "0"
+clap = { version = "4", features = ["derive"] }

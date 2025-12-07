@@ -1,7 +1,7 @@
 use core::fmt;
 use std::fmt::Formatter;
 use std::io::{BufRead, BufReader, ErrorKind, Write};
-use std::net::{TcpListener, TcpStream};
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::str::FromStr;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
@@ -10,13 +10,13 @@ use std::{io, thread};
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Command {
     Sub {
-        address: String,
+        address: SocketAddr,
         tickers: Vec<String>,
     },
 }
 
 impl FromStr for Command {
-    type Err = std::io::Error;
+    type Err = io::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut parts = s.split_whitespace();
@@ -26,6 +26,7 @@ impl FromStr for Command {
         match command {
             "SUB" => {
                 let address = parts.next().ok_or(bad_request(s))?.to_string();
+                let address = SocketAddr::from_str(address.as_str()).map_err(|_| bad_request(s))?;
                 let tickers = parts
                     .next()
                     .ok_or(bad_request(s))?
@@ -119,13 +120,12 @@ fn handle_stream(tx: Sender<Command>, stream: TcpStream) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tcp;
     use rand::Rng;
 
     #[test]
     fn test_serialization_deserialization() {
         let command = Command::Sub {
-            address: "udp://127.0.0.1:8080".to_string(),
+            address: SocketAddr::from_str("127.0.0.1:8080").unwrap(),
             tickers: vec!["AAPL".to_string()],
         };
         let value = command.to_string();
@@ -142,7 +142,7 @@ mod tests {
 
         let tickers = vec!["AAPL".to_string()];
         let command = Command::Sub {
-            address: "udp://127.0.0.1:8080".to_string(),
+            address: SocketAddr::from_str("127.0.0.1:8080").unwrap(),
             tickers,
         };
 
