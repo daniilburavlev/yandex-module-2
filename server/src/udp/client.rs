@@ -30,7 +30,7 @@ impl Client {
         Ok(())
     }
 
-    pub(crate) fn new(
+    fn new(
         socket: UdpSocket,
         address: SocketAddr,
         tickers: HashSet<String>,

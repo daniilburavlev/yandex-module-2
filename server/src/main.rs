@@ -36,6 +36,7 @@ fn main() {
 }
 
 fn start(tcp_port: u16, udp_port: u16, tickers: Vec<String>) {
+    println!("Starting server on {}:{}", tcp_port, udp_port);
     let Ok(command_rx) = tcp::run(&format!("127.0.0.1:{}", tcp_port)) else {
         eprintln!("Unable to bind TCP socket");
         exit(-1);

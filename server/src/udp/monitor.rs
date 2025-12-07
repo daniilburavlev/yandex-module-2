@@ -2,7 +2,7 @@ use crate::udp::client::ClientCommand;
 use crossbeam::channel::Sender;
 use std::collections::HashMap;
 use std::net::{SocketAddr, UdpSocket};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -33,6 +33,7 @@ impl ClientsMonitor {
 
         thread::spawn(move || {
             while let Ok(new_client_addr) = rx.recv() {
+                println!("{}", new_client_addr);
                 let mut holder = clients_holder.lock().unwrap();
                 holder.insert(new_client_addr, Instant::now());
             }
@@ -42,9 +43,11 @@ impl ClientsMonitor {
             loop {
                 thread::sleep(KEEPALIVE_INTERVAL);
                 let mut holder = check_holder.lock().unwrap();
+                println!("Waiting for stopping clients {:?}", holder);
                 let mut to_remove = Vec::new();
                 for (k, v) in holder.iter() {
                     if *v + KEEPALIVE_INTERVAL < Instant::now() {
+                        println!("{k} ({v:?})");
                         to_remove.push(k.clone());
                         if stop_tx.send(ClientCommand::Stop(k.clone())).is_err() {
                             break;
@@ -69,20 +72,18 @@ impl ClientsMonitor {
 
     fn start(&mut self) {
         loop {
+            println!("Waiting for clients...");
             let mut buffer = [0u8; 6];
             match self.socket.recv_from(&mut buffer) {
                 Ok((_, addr)) => {
+                    println!("PING");
                     let Ok(mut clients) = self.clients.lock() else {
                         continue;
                     };
                     let stock = clients.entry(addr).or_insert_with(Instant::now);
                     if Instant::now() + KEEPALIVE_INTERVAL < *stock {
                         clients.remove(&addr);
-                        if self
-                            .stop_rx
-                            .send(ClientCommand::Stop(addr))
-                            .is_err()
-                        {
+                        if self.stop_rx.send(ClientCommand::Stop(addr)).is_err() {
                             eprintln!("Channel closed");
                             break;
                         }

@@ -88,7 +88,10 @@ pub(crate) fn run(address: &str) -> io::Result<Receiver<Command>> {
                         handle_stream(tx, stream);
                     });
                 }
-                Err(_) => break,
+                Err(_) => {
+                    eprintln!("Unable to accept TCP connection");
+                    break;
+                },
             }
         }
     });
