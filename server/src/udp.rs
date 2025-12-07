@@ -1,7 +1,9 @@
-use crossbeam::channel::Receiver;
+use crossbeam::channel::{Receiver, Sender};
 use quotes::StockQuote;
-use std::collections::HashSet;
-use std::net::UdpSocket;
+use std::collections::{HashMap, HashSet};
+use std::net::{SocketAddr, UdpSocket};
+use std::sync::{Arc, Mutex, mpsc};
+use std::time::{Duration, Instant};
 use std::{io, thread};
 
 pub(crate) enum ClientCommand {
@@ -61,6 +63,72 @@ impl Client {
             }
         }
         Ok(())
+    }
+}
+
+type ClientsHolder = Arc<Mutex<HashMap<SocketAddr, Instant>>>;
+
+struct ClientsMonitoring {
+    socket: UdpSocket,
+    clients: ClientsHolder,
+    stop_rx: Sender<ClientCommand>,
+}
+
+impl ClientsMonitoring {
+    pub(crate) fn run(
+        socket: UdpSocket,
+        stop_rx: Sender<ClientCommand>,
+    ) -> mpsc::Sender<SocketAddr> {
+        let (tx, rx) = mpsc::channel::<SocketAddr>();
+        let clients_holder = Arc::new(Mutex::new(HashMap::new()));
+        let mut monitoring = Self::new(socket, stop_rx, Arc::clone(&clients_holder));
+        thread::spawn(move || {
+            monitoring.start();
+        });
+        thread::spawn(move || {
+            while let Ok(new_client_addr) = rx.recv() {
+                let mut holder = clients_holder.lock().unwrap();
+                holder.insert(new_client_addr, Instant::now());
+            }
+        });
+        tx
+    }
+
+    fn new(socket: UdpSocket, stop_rx: Sender<ClientCommand>, clients: ClientsHolder) -> Self {
+        Self {
+            socket,
+            clients,
+            stop_rx,
+        }
+    }
+
+    fn start(&mut self) {
+        loop {
+            let mut buffer = [0u8; 6];
+            match self.socket.recv_from(&mut buffer) {
+                Ok((_, addr)) => {
+                    let Ok(mut clients) = self.clients.lock() else {
+                        continue;
+                    };
+                    let stock = clients.entry(addr).or_insert_with(Instant::now);
+                    if Instant::now() + Duration::from_secs(5) < *stock {
+                        clients.remove(&addr);
+                        if self
+                            .stop_rx
+                            .send(ClientCommand::Stop(addr.to_string()))
+                            .is_err()
+                        {
+                            eprintln!("Channel closed");
+                            break;
+                        }
+                    }
+                    self.socket.send_to(b"PONG", &addr).unwrap();
+                }
+                Err(e) => {
+                    eprintln!("Error receiving from socket: {}", e);
+                }
+            }
+        }
     }
 }
 
