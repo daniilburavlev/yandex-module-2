@@ -71,6 +71,6 @@ mod tests {
             SocketAddr::from_str("127.0.0.1:5657").unwrap(),
             vec!["AAPL".to_string()],
         )
-            .unwrap();
+        .unwrap();
     }
 }
