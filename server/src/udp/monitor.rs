@@ -46,7 +46,11 @@ impl ClientsMonitor {
                 let mut to_remove = Vec::new();
                 for (k, v) in holder.iter() {
                     if *v + KEEPALIVE_INTERVAL < Instant::now() {
-                        debug!("{} not responding for: {:?}", k, v);
+                        debug!(
+                            "{} not responding for: {}s",
+                            k,
+                            KEEPALIVE_INTERVAL.as_secs()
+                        );
                         to_remove.push(*k);
                         if stop_tx.send(ClientCommand::Stop(*k)).is_err() {
                             error!("Stop channel is closed!");
