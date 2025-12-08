@@ -7,7 +7,7 @@ pub(crate) fn sub(addr: SocketAddr, remote: SocketAddr, tickers: Vec<String>) ->
     let mut stream = TcpStream::connect(remote)?;
     let request = format!("SUB {} {}\r\n", addr, tickers.join(","));
     info!("Sending request to {}: {}", remote, request);
-    stream.write(request.as_bytes())?;
+    let _ = stream.write(request.as_bytes())?;
     stream.flush()?;
     Ok(())
 }

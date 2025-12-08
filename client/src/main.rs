@@ -44,7 +44,7 @@ fn start(remote_addr: SocketAddr, local_addr: SocketAddr, tickers: PathBuf) -> i
     Server::run(socket.try_clone()?, addr_tx, stock_tx, pong_tx, stop_tx)?;
 
     println!("Sub: {}", remote_addr);
-    client::sub(local_addr.clone(), remote_addr, tickers)?;
+    client::sub(local_addr, remote_addr, tickers)?;
     println!("Sub");
 
     thread::spawn(move || {

@@ -18,11 +18,8 @@ pub(crate) fn run(stocks: Vec<String>, stock_tx: Sender<ClientCommand>) {
         let mut generator = QuoteGenerator::new(stocks);
         loop {
             thread::sleep(Duration::from_millis(10));
-            match generator.random() {
-                Some(random) => {
-                    let _ = stock_tx.send(ClientCommand::Send(random));
-                }
-                None => {}
+            if let Some(random) = generator.random() {
+                let _ = stock_tx.send(ClientCommand::Send(random));
             }
         }
     });

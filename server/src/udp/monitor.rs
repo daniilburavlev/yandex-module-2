@@ -3,7 +3,7 @@ use crossbeam::channel::Sender;
 use log::error;
 use std::collections::HashMap;
 use std::net::{SocketAddr, UdpSocket};
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -46,8 +46,8 @@ impl ClientsMonitor {
                 let mut to_remove = Vec::new();
                 for (k, v) in holder.iter() {
                     if *v + KEEPALIVE_INTERVAL < Instant::now() {
-                        to_remove.push(k.clone());
-                        if stop_tx.send(ClientCommand::Stop(k.clone())).is_err() {
+                        to_remove.push(*k);
+                        if stop_tx.send(ClientCommand::Stop(*k)).is_err() {
                             break;
                         }
                     }
@@ -87,7 +87,7 @@ impl ClientsMonitor {
                             break;
                         }
                     }
-                    self.socket.send_to(b"PONG", &addr).unwrap();
+                    self.socket.send_to(b"PONG", addr).unwrap();
                 }
                 Err(e) => {
                     error!("Error receiving from socket: {}", e);

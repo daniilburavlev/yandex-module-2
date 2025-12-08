@@ -51,7 +51,7 @@ impl Client {
                 ClientCommand::Send(stock) => {
                     if self.tickers.contains(&stock.ticker) {
                         let stock: Vec<u8> = stock.try_into()?;
-                        self.socket.send_to(&stock, &self.address)?;
+                        self.socket.send_to(&stock, self.address)?;
                     }
                 }
                 ClientCommand::Stop(address) => {
