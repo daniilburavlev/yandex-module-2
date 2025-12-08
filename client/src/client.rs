@@ -52,4 +52,25 @@ mod tests {
         )
         .unwrap();
     }
+
+    #[test]
+    #[should_panic(expected = "ERR: invalid input\\r\\n")]
+    fn test_sub_invalid_input() {
+        let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
+        thread::spawn(move || {
+            for stream in listener.incoming() {
+                let mut stream = stream.unwrap();
+                let mut buffer = [0u8; 1024];
+                let size = stream.read(&mut buffer).unwrap();
+                assert_eq!(&buffer[..size], b"SUB 127.0.0.1:9090 AAPL\r\n");
+                stream.write_all(b"ERR: invalid input\r\n").unwrap();
+            }
+        });
+        sub(
+            SocketAddr::from_str("127.0.0.1:9090").unwrap(),
+            SocketAddr::from_str("127.0.0.1:8080").unwrap(),
+            vec!["AAPL".to_string()],
+        )
+            .unwrap();
+    }
 }
