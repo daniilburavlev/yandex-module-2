@@ -2,9 +2,9 @@ extern crate core;
 
 use clap::Parser;
 use log::info;
-use std::fs;
 use std::path::PathBuf;
 use std::process::exit;
+use std::{fs, io};
 
 mod generator;
 mod tcp;
@@ -32,22 +32,21 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
     env_logger::init();
-    let data = fs::read_to_string(&cli.tickers_path).expect("Failed to read 'tickers' file");
-    let tickers = data.lines().map(|s| s.to_string()).collect();
-    start(cli.tcp_port, cli.udp_port, tickers);
+    if let Err(e) = start(cli.tcp_port, cli.udp_port, cli.tickers_path) {
+        eprintln!("{}", e);
+        exit(-1);
+    }
 }
 
-fn start(tcp_port: u16, udp_port: u16, tickers: Vec<String>) {
+fn start(tcp_port: u16, udp_port: u16, tickers_path: PathBuf) -> io::Result<()> {
+    let data = fs::read_to_string(tickers_path)?;
+    let tickers = quotes::parse_tickers(&data);
+
     info!("Starting server on TCP:{}/UDP:{}", tcp_port, udp_port);
-    let Ok(command_rx) = tcp::run(&format!("127.0.0.1:{}", tcp_port)) else {
-        eprintln!("Unable to bind TCP socket");
-        exit(-1);
-    };
+    let command_rx = tcp::run(&format!("127.0.0.1:{}", tcp_port))?;
     let (stock_tx, stock_rx) = crossbeam::channel::unbounded();
     generator::run(tickers, stock_tx.clone());
 
-    if let Err(e) = udp::run(udp_port, command_rx, stock_tx, stock_rx) {
-        eprintln!("Error: {}", e);
-        exit(-1);
-    }
+    udp::run(udp_port, command_rx, stock_tx, stock_rx)?;
+    Ok(())
 }

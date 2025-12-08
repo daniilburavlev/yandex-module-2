@@ -20,6 +20,7 @@ impl FromStr for Command {
     type Err = io::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.trim();
         let mut parts = s.split_whitespace();
         let Some(command) = parts.next() else {
             return Err(bad_request(s));
@@ -56,7 +57,7 @@ fn bad_request(s: &str) -> io::Error {
     io::Error::new(
         ErrorKind::InvalidInput,
         format!(
-            "Bad request: {}, (example 'SUB udp://127.0.0.1:8080 TIC,TIC,TIC')",
+            "Bad request: [{}], (example 'SUB 127.0.0.1:8080 TIC,TIC,TIC')",
             s
         ),
     )

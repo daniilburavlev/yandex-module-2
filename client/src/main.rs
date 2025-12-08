@@ -63,5 +63,5 @@ fn start(remote_addr: SocketAddr, local_addr: SocketAddr, tickers: PathBuf) -> i
 
 fn load_tickers(path: PathBuf) -> io::Result<Vec<String>> {
     let data = fs::read_to_string(path)?;
-    Ok(data.lines().map(|s| s.to_string()).collect())
+    Ok(quotes::parse_tickers(&data))
 }

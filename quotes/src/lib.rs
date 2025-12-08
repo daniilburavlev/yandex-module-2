@@ -43,3 +43,18 @@ impl StockQuote {
             .as_millis() as u64;
     }
 }
+
+/// Read TICKERS from file
+///
+/// # Example
+/// ```rust
+/// use quotes::parse_tickers;
+/// let tickers = parse_tickers("AAPL\r\nNFLX\r\n").unwrap();
+/// ```
+pub fn parse_tickers(data: &str) -> Vec<String> {
+    let data = data.trim();
+    data.lines()
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .collect()
+}
