@@ -14,7 +14,7 @@ pub(crate) fn sub(addr: SocketAddr, remote: SocketAddr, tickers: Vec<String>) ->
     let mut buffer = [0u8; BUFFER_SIZE];
     let size = stream.read(&mut buffer)?;
     let buffer = &buffer[..size];
-    if size == 2 && buffer == b"OK" {
+    if size == 4 && buffer == b"OK\r\n" {
         info!("Subscribed to: {}", tickers.join(","));
         Ok(())
     } else {
@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn test_sub() {
-        let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
+        let listener = TcpListener::bind("127.0.0.1:9876").unwrap();
         thread::spawn(move || {
             for stream in listener.incoming() {
                 let mut stream = stream.unwrap();
@@ -47,7 +47,7 @@ mod tests {
         });
         sub(
             SocketAddr::from_str("127.0.0.1:9090").unwrap(),
-            SocketAddr::from_str("127.0.0.1:8080").unwrap(),
+            SocketAddr::from_str("127.0.0.1:9876").unwrap(),
             vec!["AAPL".to_string()],
         )
         .unwrap();
@@ -56,7 +56,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "ERR: invalid input\\r\\n")]
     fn test_sub_invalid_input() {
-        let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
+        let listener = TcpListener::bind("127.0.0.1:5657").unwrap();
         thread::spawn(move || {
             for stream in listener.incoming() {
                 let mut stream = stream.unwrap();
@@ -68,7 +68,7 @@ mod tests {
         });
         sub(
             SocketAddr::from_str("127.0.0.1:9090").unwrap(),
-            SocketAddr::from_str("127.0.0.1:8080").unwrap(),
+            SocketAddr::from_str("127.0.0.1:5657").unwrap(),
             vec!["AAPL".to_string()],
         )
             .unwrap();
