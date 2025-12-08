@@ -3,7 +3,7 @@ use crossbeam::channel::Sender;
 use log::error;
 use std::collections::HashMap;
 use std::net::{SocketAddr, UdpSocket};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
