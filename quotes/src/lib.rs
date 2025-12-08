@@ -2,12 +2,11 @@
 #![warn(missing_docs)]
 //! The `quotes` create
 
-mod serialization;
-
+use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Main data of the stock
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct StockQuote {
     /// The stock name
     pub ticker: String,

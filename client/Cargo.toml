@@ -8,3 +8,4 @@ clap = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
 quotes = { path = "../quotes" }
+serde_json = { workspace = true }

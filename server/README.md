@@ -18,5 +18,5 @@ RUST_LOG=info cargo run --release --package client -- \
 
 ## Помощь
 ```bash
- cargo run --release --package server -- --help
+cargo run --release --package server -- --help
 ```

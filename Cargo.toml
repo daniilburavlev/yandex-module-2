@@ -1,9 +1,10 @@
 [workspace]
 resolver = "1"
-members = ["client","quotes", "server"]
+members = ["client", "quotes", "server"]
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
 rand = "0"
 crossbeam = "0"
 clap = { version = "4", features = ["derive"] }

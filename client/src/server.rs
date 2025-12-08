@@ -63,7 +63,7 @@ impl Server {
                 info!("Received PONG from {}", addr);
                 let _ = self.pong_tx.send(());
             } else {
-                let Ok(stock) = buffer.to_vec().try_into() else {
+                let Ok(stock) = serde_json::from_slice(&buffer[..size]) else {
                     error!("Invalid UDP packet!");
                     continue;
                 };

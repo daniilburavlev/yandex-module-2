@@ -1,5 +1,5 @@
 use crossbeam::channel::Receiver;
-use log::info;
+use log::{error, info};
 use quotes::StockQuote;
 use std::collections::HashSet;
 use std::net::{SocketAddr, UdpSocket};
@@ -51,8 +51,15 @@ impl Client {
             match command {
                 ClientCommand::Send(stock) => {
                     if self.tickers.contains(&stock.ticker) {
-                        let stock: Vec<u8> = stock.try_into()?;
-                        self.socket.send_to(&stock, self.address)?;
+                        match serde_json::to_vec(&stock) {
+                            Ok(stock) => {
+                                if let Err(e) = self.socket.send_to(&stock, self.address) {
+                                    error!("Failed to send stock: {}", e);
+                                    break;
+                                }
+                            }
+                            Err(e) => error!("JSON error: {}", e),
+                        }
                     }
                 }
                 ClientCommand::Stop(address) => {
@@ -95,11 +102,10 @@ mod tests {
         let stock = StockQuote::new("AAPL", 100, 100);
         tx.send(ClientCommand::Send(stock.clone())).unwrap();
 
-        let mut buffer = [0u8; 1024];
-        client.recv(&mut buffer).unwrap();
+        let mut buffer = [0u8; 2048];
+        let len = client.recv(&mut buffer).unwrap();
 
-        let buffer = buffer.to_vec();
-        let result: StockQuote = buffer.try_into().unwrap();
+        let result: StockQuote = serde_json::from_slice(&buffer[..len]).unwrap();
 
         assert_eq!(stock, result);
     }
