@@ -1,6 +1,6 @@
 use crate::udp::client::ClientCommand;
 use crossbeam::channel::Sender;
-use log::error;
+use log::{debug, error};
 use std::collections::HashMap;
 use std::net::{SocketAddr, UdpSocket};
 use std::process::exit;
@@ -15,7 +15,6 @@ type KeepAliveHolder = Arc<Mutex<HashMap<SocketAddr, Instant>>>;
 pub(crate) struct ClientsMonitor {
     socket: UdpSocket,
     clients: KeepAliveHolder,
-    stop_rx: Sender<ClientCommand>,
 }
 
 impl ClientsMonitor {
@@ -25,7 +24,7 @@ impl ClientsMonitor {
     ) -> mpsc::Sender<SocketAddr> {
         let (tx, rx) = mpsc::channel::<SocketAddr>();
         let clients_holder = Arc::new(Mutex::new(HashMap::new()));
-        let mut monitoring = Self::new(socket, stop_tx.clone(), Arc::clone(&clients_holder));
+        let mut monitoring = Self::new(socket, Arc::clone(&clients_holder));
 
         let check_holder = Arc::clone(&clients_holder);
 
@@ -47,9 +46,11 @@ impl ClientsMonitor {
                 let mut to_remove = Vec::new();
                 for (k, v) in holder.iter() {
                     if *v + KEEPALIVE_INTERVAL < Instant::now() {
+                        debug!("{} not responding for: {:?}", k, v);
                         to_remove.push(*k);
                         if stop_tx.send(ClientCommand::Stop(*k)).is_err() {
-                            break;
+                            error!("Stop channel is closed!");
+                            exit(-1);
                         }
                     }
                 }
@@ -61,12 +62,8 @@ impl ClientsMonitor {
         tx
     }
 
-    fn new(socket: UdpSocket, stop_rx: Sender<ClientCommand>, clients: KeepAliveHolder) -> Self {
-        Self {
-            socket,
-            clients,
-            stop_rx,
-        }
+    fn new(socket: UdpSocket, clients: KeepAliveHolder) -> Self {
+        Self { socket, clients }
     }
 
     fn start(&mut self) {
@@ -80,14 +77,7 @@ impl ClientsMonitor {
                     let Ok(mut clients) = self.clients.lock() else {
                         continue;
                     };
-                    let stock = clients.entry(addr).or_insert_with(Instant::now);
-                    if Instant::now() + KEEPALIVE_INTERVAL < *stock {
-                        clients.remove(&addr);
-                        if self.stop_rx.send(ClientCommand::Stop(addr)).is_err() {
-                            error!("Channel closed");
-                            break;
-                        }
-                    }
+                    clients.insert(addr, Instant::now());
                     if let Err(e) = self.socket.send_to(b"PONG", addr) {
                         error!("Server disconnected: {}", e);
                         exit(-1);

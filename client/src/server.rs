@@ -1,4 +1,4 @@
-use log::error;
+use log::{error, info};
 use quotes::StockQuote;
 use std::net::{SocketAddr, UdpSocket};
 use std::sync::mpsc::Sender;
@@ -60,6 +60,7 @@ impl Server {
                 address_sent = true;
             }
             if size == PONG_SIZE && String::from_utf8_lossy(&buffer[..PONG_SIZE]).eq("PONG") {
+                info!("Received PONG from {}", addr);
                 let _ = self.pong_tx.send(());
             } else {
                 let Ok(stock) = buffer.to_vec().try_into() else {

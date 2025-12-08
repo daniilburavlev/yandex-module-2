@@ -1,4 +1,4 @@
-use log::error;
+use log::{error, info};
 use std::net::{SocketAddr, UdpSocket};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
@@ -47,6 +47,7 @@ impl PingPongMonitor {
                     }
                     break;
                 }
+                info!("Sending PING to: {}", addr);
                 thread::sleep(SLEEP_DURATION);
             }
         });
