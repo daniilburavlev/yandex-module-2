@@ -1,4 +1,5 @@
 use crossbeam::channel::Receiver;
+use log::error;
 use quotes::StockQuote;
 use std::collections::HashSet;
 use std::net::{SocketAddr, UdpSocket};
@@ -55,6 +56,7 @@ impl Client {
                 }
                 ClientCommand::Stop(address) => {
                     if address == self.address {
+                        error!("Client {} stopped", self.address);
                         break;
                     }
                 }

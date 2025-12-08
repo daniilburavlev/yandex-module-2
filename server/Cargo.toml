@@ -8,3 +8,5 @@ quotes = { path = "../quotes" }
 rand = { workspace = true }
 crossbeam = { workspace = true }
 clap = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }

@@ -1,5 +1,6 @@
 use crate::udp::client::ClientCommand;
 use crossbeam::channel::Sender;
+use log::error;
 use std::collections::HashMap;
 use std::net::{SocketAddr, UdpSocket};
 use std::sync::{Arc, Mutex, mpsc};
@@ -33,7 +34,6 @@ impl ClientsMonitor {
 
         thread::spawn(move || {
             while let Ok(new_client_addr) = rx.recv() {
-                println!("{}", new_client_addr);
                 let mut holder = clients_holder.lock().unwrap();
                 holder.insert(new_client_addr, Instant::now());
             }
@@ -43,11 +43,9 @@ impl ClientsMonitor {
             loop {
                 thread::sleep(KEEPALIVE_INTERVAL);
                 let mut holder = check_holder.lock().unwrap();
-                println!("Waiting for stopping clients {:?}", holder);
                 let mut to_remove = Vec::new();
                 for (k, v) in holder.iter() {
                     if *v + KEEPALIVE_INTERVAL < Instant::now() {
-                        println!("{k} ({v:?})");
                         to_remove.push(k.clone());
                         if stop_tx.send(ClientCommand::Stop(k.clone())).is_err() {
                             break;
@@ -72,11 +70,12 @@ impl ClientsMonitor {
 
     fn start(&mut self) {
         loop {
-            println!("Waiting for clients...");
             let mut buffer = [0u8; 6];
             match self.socket.recv_from(&mut buffer) {
-                Ok((_, addr)) => {
-                    println!("PING");
+                Ok((size, addr)) => {
+                    if size != 4 || String::from_utf8_lossy(&buffer[..size]) != "PING" {
+                        continue;
+                    }
                     let Ok(mut clients) = self.clients.lock() else {
                         continue;
                     };
@@ -84,14 +83,14 @@ impl ClientsMonitor {
                     if Instant::now() + KEEPALIVE_INTERVAL < *stock {
                         clients.remove(&addr);
                         if self.stop_rx.send(ClientCommand::Stop(addr)).is_err() {
-                            eprintln!("Channel closed");
+                            error!("Channel closed");
                             break;
                         }
                     }
                     self.socket.send_to(b"PONG", &addr).unwrap();
                 }
                 Err(e) => {
-                    eprintln!("Error receiving from socket: {}", e);
+                    error!("Error receiving from socket: {}", e);
                 }
             }
         }

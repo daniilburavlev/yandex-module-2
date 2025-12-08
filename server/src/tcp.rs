@@ -1,4 +1,5 @@
 use core::fmt;
+use log::error;
 use std::fmt::Formatter;
 use std::io::{BufRead, BufReader, ErrorKind, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
@@ -89,9 +90,9 @@ pub(crate) fn run(address: &str) -> io::Result<Receiver<Command>> {
                     });
                 }
                 Err(_) => {
-                    eprintln!("Unable to accept TCP connection");
+                    error!("Unable to accept TCP connection");
                     break;
-                },
+                }
             }
         }
     });

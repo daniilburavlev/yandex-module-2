@@ -8,7 +8,7 @@ const TIMESTAMP_SIZE: usize = 8;
 
 const INVALID_FORMAT_MSG: &str = "Неверный формат файла!";
 
-const MAX_TICKER_LEN: usize = 4;
+const MAX_TICKER_LEN: usize = 5;
 
 impl TryInto<Vec<u8>> for StockQuote {
     type Error = io::Error;
@@ -109,9 +109,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Максимальный размер размер тикера: 4, получено: 5")]
+    #[should_panic(expected = "Максимальный размер размер тикера: 5, получено: 6")]
     fn test_max_ticker_size() {
-        let stock = StockQuote::new("APPLE", 100, 3000000000);
+        let stock = StockQuote::new("APPLEF", 100, 3000000000);
         let _: Vec<u8> = stock.clone().try_into().unwrap();
     }
 }

@@ -1,6 +1,7 @@
 use crate::tcp::Command;
 use crate::udp::client::Client;
 use crossbeam::channel::{Receiver, Sender};
+use log::error;
 use std::io;
 use std::net::{SocketAddr, UdpSocket};
 use std::sync::mpsc;
@@ -40,7 +41,7 @@ fn handle_command(
         Command::Sub { address, tickers } => {
             new_client_tx.send(address).unwrap();
             if let Err(e) = Client::run(socket, address, tickers.into_iter().collect(), rx) {
-                eprintln!("{}", e);
+                error!("{}", e);
             }
         }
     }

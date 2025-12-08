@@ -1,6 +1,7 @@
 extern crate core;
 
 use clap::Parser;
+use log::info;
 use std::fs;
 use std::path::PathBuf;
 use std::process::exit;
@@ -30,13 +31,14 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
+    env_logger::init();
     let data = fs::read_to_string(&cli.tickers_path).expect("Failed to read 'tickers' file");
     let tickers = data.lines().map(|s| s.to_string()).collect();
     start(cli.tcp_port, cli.udp_port, tickers);
 }
 
 fn start(tcp_port: u16, udp_port: u16, tickers: Vec<String>) {
-    println!("Starting server on {}:{}", tcp_port, udp_port);
+    info!("Starting server on TCP:{}/UDP:{}", tcp_port, udp_port);
     let Ok(command_rx) = tcp::run(&format!("127.0.0.1:{}", tcp_port)) else {
         eprintln!("Unable to bind TCP socket");
         exit(-1);
