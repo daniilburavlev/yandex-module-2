@@ -4,6 +4,7 @@ use crossbeam::channel::{Receiver, Sender};
 use log::error;
 use std::io;
 use std::net::{SocketAddr, UdpSocket};
+use std::process::exit;
 use std::sync::mpsc;
 
 mod client;
@@ -39,7 +40,10 @@ fn handle_command(
 ) {
     match command {
         Command::Sub { address, tickers } => {
-            new_client_tx.send(address).unwrap();
+            if let Err(e) = new_client_tx.send(address) {
+                error!("Failed to send client address: {}", e);
+                exit(-1);
+            }
             if let Err(e) = Client::run(socket, address, tickers.into_iter().collect(), rx) {
                 error!("{}", e);
             }

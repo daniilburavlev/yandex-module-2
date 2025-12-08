@@ -1,3 +1,4 @@
+use log::error;
 use std::net::{SocketAddr, UdpSocket};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
@@ -28,13 +29,24 @@ impl PingPongMonitor {
     fn run_ping(&self, socket: UdpSocket, addr_rx: Receiver<SocketAddr>, stop_tx: Sender<String>) {
         thread::spawn(move || {
             let Ok(addr) = addr_rx.recv() else {
-                stop_tx
+                if stop_tx
                     .send("Failed to get UDP address, channel is closed!".to_string())
-                    .unwrap();
+                    .is_err()
+                {
+                    error!("Failed to send stop cmd, channel is closed!");
+                }
                 return;
             };
             loop {
-                socket.send_to(b"PING", addr).unwrap();
+                if socket.send_to(b"PING", addr).is_err() {
+                    if stop_tx
+                        .send("Failed to send 'PING' UDP socket is closed!".to_string())
+                        .is_err()
+                    {
+                        error!("Failed to send stop cmd, channel is closed!");
+                    }
+                    break;
+                }
                 thread::sleep(SLEEP_DURATION);
             }
         });

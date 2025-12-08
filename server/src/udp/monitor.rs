@@ -3,6 +3,7 @@ use crossbeam::channel::Sender;
 use log::error;
 use std::collections::HashMap;
 use std::net::{SocketAddr, UdpSocket};
+use std::process::exit;
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -87,7 +88,10 @@ impl ClientsMonitor {
                             break;
                         }
                     }
-                    self.socket.send_to(b"PONG", addr).unwrap();
+                    if let Err(e) = self.socket.send_to(b"PONG", addr) {
+                        error!("Server disconnected: {}", e);
+                        exit(-1);
+                    }
                 }
                 Err(e) => {
                     error!("Error receiving from socket: {}", e);
