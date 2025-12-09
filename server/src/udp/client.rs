@@ -3,6 +3,7 @@ use log::{error, info};
 use quotes::StockQuote;
 use std::collections::HashSet;
 use std::net::{SocketAddr, UdpSocket};
+use std::time::SystemTime;
 use std::{io, thread};
 
 #[derive(Debug)]
@@ -47,9 +48,16 @@ impl Client {
     }
 
     fn start(&self) -> io::Result<()> {
+        let start_timestamp = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .map_err(io::Error::other)?
+            .as_secs();
         while let Ok(command) = self.stock_rx.recv() {
             match command {
                 ClientCommand::Send(stock) => {
+                    if start_timestamp > stock.timestamp {
+                        continue;
+                    }
                     if self.tickers.contains(&stock.ticker) {
                         match serde_json::to_vec(&stock) {
                             Ok(stock) => {
