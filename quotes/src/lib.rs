@@ -64,7 +64,28 @@ impl StockQuote {
 pub fn parse_tickers(data: &str) -> Vec<String> {
     let data = data.trim();
     data.lines()
+        .map(|s| s.trim())
         .filter(|s| !s.is_empty())
         .map(|s| s.to_string())
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_tickers() {
+        let tickers = "AAPL\r\n\r\n \r\nNFLX";
+        let tickers = parse_tickers(tickers);
+        assert_eq!(tickers, vec!["AAPL", "NFLX"]);
+    }
+
+    #[test]
+    fn test_update_stock() {
+        let mut stock = StockQuote::new("AAPL", 200, 3000000);
+        stock.update(210, 3300000);
+        assert_eq!(stock.price, 210);
+        assert_eq!(stock.volume, 3300000);
+    }
 }

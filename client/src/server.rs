@@ -75,3 +75,36 @@ impl Server {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::mpsc;
+
+    #[test]
+    fn test_server_run() {
+        let address = SocketAddr::from(([127, 0, 0, 1], 9458));
+        let socket = UdpSocket::bind(address).unwrap();
+        let (addr_tx, addr_rx) = mpsc::channel();
+        let (stock_tx, stock_rx) = mpsc::channel();
+        let (pong_tx, pong_rx) = mpsc::channel();
+        let (stop_tx, _) = mpsc::channel();
+
+        Server::run(socket, addr_tx, stock_tx, pong_tx, stop_tx).unwrap();
+
+        let sender_addr = SocketAddr::from(([127, 0, 0, 1], 9459));
+        let socket = UdpSocket::bind(sender_addr).unwrap();
+        socket.send_to(b"PONG", address).unwrap();
+
+        let received_addr = addr_rx.recv().unwrap();
+        assert_eq!(sender_addr, received_addr);
+
+        let _ = pong_rx.recv().unwrap();
+
+        let stock = StockQuote::new("AAPL", 200, 3000000);
+        let stock_json = serde_json::to_vec(&stock).unwrap();
+        socket.send_to(&stock_json, address).unwrap();
+        let received_stock = stock_rx.recv().unwrap();
+        assert_eq!(received_stock, stock);
+    }
+}
