@@ -85,6 +85,7 @@ impl Client {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::variables::CHANNEL_SIZE;
     use rand::random_range;
     use std::net::{IpAddr, Ipv4Addr};
     use std::time::Duration;
@@ -94,7 +95,7 @@ mod tests {
         let server = format!("127.0.0.1:{}", random_range::<i32, _>(8000..9000));
 
         let udp = UdpSocket::bind(&server).unwrap();
-        let (tx, rx) = crossbeam::channel::unbounded();
+        let (tx, rx) = crossbeam::channel::bounded(CHANNEL_SIZE);
 
         let client = SocketAddr::new(
             IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),

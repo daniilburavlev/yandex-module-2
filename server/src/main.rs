@@ -1,5 +1,6 @@
 extern crate core;
 
+use crate::variables::CHANNEL_SIZE;
 use clap::Parser;
 use log::info;
 use std::path::PathBuf;
@@ -9,6 +10,7 @@ use std::{fs, io};
 mod generator;
 mod tcp;
 mod udp;
+mod variables;
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -44,7 +46,7 @@ fn start(tcp_port: u16, udp_port: u16, tickers_path: PathBuf) -> io::Result<()> 
 
     info!("Starting server on TCP:{}/UDP:{}", tcp_port, udp_port);
     let command_rx = tcp::run(&format!("127.0.0.1:{}", tcp_port))?;
-    let (stock_tx, stock_rx) = crossbeam::channel::unbounded();
+    let (stock_tx, stock_rx) = crossbeam::channel::bounded(CHANNEL_SIZE);
     generator::run(tickers, stock_tx.clone());
 
     udp::run(udp_port, command_rx, stock_tx, stock_rx)?;
