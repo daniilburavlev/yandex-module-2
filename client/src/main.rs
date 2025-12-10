@@ -56,6 +56,7 @@ fn start(remote_addr: SocketAddr, local_addr: SocketAddr, tickers: PathBuf) -> i
     if let Ok(error_msg) = stop_rx.recv() {
         return Err(io::Error::new(io::ErrorKind::Interrupted, error_msg));
     }
+
     Ok(())
 }
 

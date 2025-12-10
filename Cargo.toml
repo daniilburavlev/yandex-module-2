@@ -10,3 +10,4 @@ crossbeam = "0"
 clap = { version = "4", features = ["derive"] }
 log = "0"
 env_logger = "0"
+parking_lot = "0"

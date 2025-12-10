@@ -53,9 +53,9 @@ impl Server {
         while let Ok((size, addr)) = self.socket.recv_from(&mut buffer) {
             if !address_sent {
                 if self.addr_tx.send(addr).is_err() {
-                    self.stop_tx
-                        .send("UDP socket address channel is closed".to_string())
-                        .unwrap();
+                    let _ = self
+                        .stop_tx
+                        .send("UDP socket address channel is closed".to_string());
                 }
                 address_sent = true;
             }

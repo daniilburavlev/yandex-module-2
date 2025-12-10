@@ -1,10 +1,11 @@
 use crate::udp::client::ClientCommand;
 use crossbeam::channel::Sender;
 use log::{debug, error};
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::net::{SocketAddr, UdpSocket};
 use std::process::exit;
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -34,7 +35,7 @@ impl ClientsMonitor {
 
         thread::spawn(move || {
             while let Ok(new_client_addr) = rx.recv() {
-                let mut holder = clients_holder.lock().unwrap();
+                let mut holder = clients_holder.lock();
                 holder.insert(new_client_addr, Instant::now());
             }
         });
@@ -42,7 +43,7 @@ impl ClientsMonitor {
         thread::spawn(move || {
             loop {
                 thread::sleep(KEEPALIVE_INTERVAL);
-                let mut holder = check_holder.lock().unwrap();
+                let mut holder = check_holder.lock();
                 let mut to_remove = Vec::new();
                 for (k, v) in holder.iter() {
                     if *v + KEEPALIVE_INTERVAL < Instant::now() {
@@ -78,9 +79,7 @@ impl ClientsMonitor {
                     if size != 4 || String::from_utf8_lossy(&buffer[..size]) != "PING" {
                         continue;
                     }
-                    let Ok(mut clients) = self.clients.lock() else {
-                        continue;
-                    };
+                    let mut clients = self.clients.lock();
                     clients.insert(addr, Instant::now());
                     if let Err(e) = self.socket.send_to(b"PONG", addr) {
                         error!("Server disconnected: {}", e);

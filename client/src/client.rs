@@ -9,7 +9,7 @@ pub(crate) fn sub(addr: SocketAddr, remote: SocketAddr, tickers: Vec<String>) ->
     let mut stream = TcpStream::connect(remote)?;
     let request = format!("STREAM udp://{} {}\r\n", addr, tickers.join(","));
     info!("Sending request to {}: {}", remote, request);
-    let _ = stream.write(request.as_bytes())?;
+    stream.write_all(request.as_bytes())?;
     stream.flush()?;
     let mut buffer = [0u8; BUFFER_SIZE];
     let size = stream.read(&mut buffer)?;
