@@ -39,7 +39,7 @@ fn handle_command(
     new_client_tx: mpsc::Sender<SocketAddr>,
 ) {
     match command {
-        Command::Sub { address, tickers } => {
+        Command::Stream { address, tickers } => {
             if let Err(e) = new_client_tx.send(address) {
                 error!("Failed to send client address: {}", e);
                 exit(-1);

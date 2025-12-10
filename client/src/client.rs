@@ -7,7 +7,7 @@ const BUFFER_SIZE: usize = 1024;
 
 pub(crate) fn sub(addr: SocketAddr, remote: SocketAddr, tickers: Vec<String>) -> io::Result<()> {
     let mut stream = TcpStream::connect(remote)?;
-    let request = format!("SUB {} {}\r\n", addr, tickers.join(","));
+    let request = format!("STREAM udp://{} {}\r\n", addr, tickers.join(","));
     info!("Sending request to {}: {}", remote, request);
     let _ = stream.write(request.as_bytes())?;
     stream.flush()?;
@@ -41,7 +41,7 @@ mod tests {
                 let mut stream = stream.unwrap();
                 let mut buffer = [0u8; 1024];
                 let size = stream.read(&mut buffer).unwrap();
-                assert_eq!(&buffer[..size], b"SUB 127.0.0.1:9090 AAPL\r\n");
+                assert_eq!(&buffer[..size], b"STREAM udp://127.0.0.1:9090 AAPL\r\n");
                 stream.write_all(b"OK\r\n").unwrap();
             }
         });
@@ -62,7 +62,7 @@ mod tests {
                 let mut stream = stream.unwrap();
                 let mut buffer = [0u8; 1024];
                 let size = stream.read(&mut buffer).unwrap();
-                assert_eq!(&buffer[..size], b"SUB 127.0.0.1:9090 AAPL\r\n");
+                assert_eq!(&buffer[..size], b"STREAM udp://127.0.0.1:9090 AAPL\r\n");
                 stream.write_all(b"ERR: invalid input\r\n").unwrap();
             }
         });

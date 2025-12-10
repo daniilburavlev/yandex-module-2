@@ -8,9 +8,11 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::{io, thread};
 
+const UDP_PREFIX_LEN: usize = 6;
+
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Command {
-    Sub {
+    Stream {
         address: SocketAddr,
         tickers: Vec<String>,
     },
@@ -26,16 +28,20 @@ impl FromStr for Command {
             return Err(bad_request(s));
         };
         match command {
-            "SUB" => {
+            "STREAM" => {
                 let address = parts.next().ok_or(bad_request(s))?.to_string();
-                let address = SocketAddr::from_str(address.as_str()).map_err(|_| bad_request(s))?;
+                if !address.starts_with("udp://") {
+                    return Err(bad_request(s));
+                }
+                let address =
+                    SocketAddr::from_str(&address[UDP_PREFIX_LEN..]).map_err(|_| bad_request(s))?;
                 let tickers = parts
                     .next()
                     .ok_or(bad_request(s))?
                     .split(",")
                     .map(ToString::to_string)
                     .collect();
-                Ok(Command::Sub { address, tickers })
+                Ok(Command::Stream { address, tickers })
             }
             _ => Err(bad_request(s)),
         }
@@ -45,8 +51,12 @@ impl FromStr for Command {
 impl fmt::Display for Command {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Command::Sub { address, tickers } => {
-                f.write_fmt(format_args!("SUB {} {}", address, tickers.join(",")))?;
+            Command::Stream { address, tickers } => {
+                f.write_fmt(format_args!(
+                    "STREAM udp://{} {}",
+                    address,
+                    tickers.join(",")
+                ))?;
             }
         }
         Ok(())
@@ -57,7 +67,7 @@ fn bad_request(s: &str) -> io::Error {
     io::Error::new(
         ErrorKind::InvalidInput,
         format!(
-            "Bad request: [{}], (example 'SUB 127.0.0.1:8080 TIC,TIC,TIC')",
+            "Bad request: [{}], (example 'STREAM udp://127.0.0.1:8080 TIC,TIC,TIC')",
             s
         ),
     )
@@ -129,7 +139,7 @@ mod tests {
 
     #[test]
     fn test_serialization_deserialization() {
-        let command = Command::Sub {
+        let command = Command::Stream {
             address: SocketAddr::from_str("127.0.0.1:8080").unwrap(),
             tickers: vec!["AAPL".to_string()],
         };
@@ -146,7 +156,7 @@ mod tests {
         let rx = run(&address).unwrap();
 
         let tickers = vec!["AAPL".to_string()];
-        let command = Command::Sub {
+        let command = Command::Stream {
             address: SocketAddr::from_str("127.0.0.1:8080").unwrap(),
             tickers,
         };
